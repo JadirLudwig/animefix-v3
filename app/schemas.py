@@ -27,6 +27,7 @@ class AnimeResponse(BaseModel):
     name: str
     base_url: str
     poster_url: Optional[str]
+    mal_url: Optional[str]
     description: Optional[str]
     last_sync_date: datetime
     episodes: List[EpisodeResponse] = []

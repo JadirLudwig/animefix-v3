@@ -8,6 +8,7 @@ const PROGRESS_KEY = 'anime_playback_progress';
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchAnimes();
+    fetchRecentEpisodes();
     
     // Navbar scroll effect
     window.addEventListener('scroll', () => {
@@ -79,6 +80,36 @@ function renderHome() {
 
     // Continue Watching
     renderContinueWatching();
+}
+
+async function fetchRecentEpisodes() {
+    try {
+        const res = await fetch('/api/episodes/recent');
+        const eps = await res.json();
+        renderRecentEpisodes(eps);
+    } catch (err) {
+        console.error("Error fetching recent episodes:", err);
+    }
+}
+
+function renderRecentEpisodes(eps) {
+    const grid = document.getElementById('newEpisodesGrid');
+    grid.innerHTML = '';
+    eps.forEach(ep => {
+        const card = document.createElement('div');
+        card.className = 'anime-card';
+        card.tabIndex = 0;
+        card.innerHTML = `
+            <img src="${ep.thumb_url || 'https://via.placeholder.com/300x450?text=Ep'}" alt="${ep.title}">
+            <div class="anime-info">
+                <div class="anime-name">${ep.anime_name}</div>
+                <div style="font-size:0.75rem; color:var(--netflix-red); font-weight:bold;">Novo: Ep ${ep.number}</div>
+            </div>
+        `;
+        // Find media type from animeData if possible, or assume m3u8 for recent
+        card.onclick = () => playEpisode(ep.id, ep.anime_name, ep.number, '.m3u8');
+        grid.appendChild(card);
+    });
 }
 
 function renderAnimesGrid(data, containerId) {
@@ -153,8 +184,16 @@ function setupHero() {
     document.getElementById('heroTitle').textContent = hero.name;
     document.getElementById('heroSynopsis').textContent = hero.description || "Nenhuma descrição disponível.";
     
+    // Setup MAL link
+    const malBtn = document.getElementById('heroMalLink');
+    if (hero.mal_url) {
+        malBtn.href = hero.mal_url;
+        malBtn.style.display = 'flex';
+    } else {
+        malBtn.style.display = 'none';
+    }
+    
     currentIndex = animeData.indexOf(hero);
-    document.querySelector('.btn-primary').focus();
 }
 
 function showDetails(anime) {

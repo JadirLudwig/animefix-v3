@@ -12,6 +12,7 @@ class Anime(Base):
     base_url = Column(String, unique=True, index=True, nullable=False)
     last_sync_date = Column(DateTime, default=datetime.utcnow)
     poster_url = Column(String, nullable=True)
+    mal_url = Column(String, nullable=True) # MyAnimeList URL
     description = Column(String, nullable=True)
     
     episodes = relationship("Episode", back_populates="anime", cascade="all, delete-orphan")

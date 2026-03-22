@@ -23,7 +23,7 @@ async def sync_anime_updates(anime_id: int):
     db.close()
 
     logger.info(f"Syncing anime updates for {base_url}...")
-    anime_name, poster_url, description, scraped_episodes = await scrape_anime_episodes(base_url)
+    anime_name, poster_url, description, mal_url, scraped_episodes = await scrape_anime_episodes(base_url)
 
     db = SessionLocal()
     anime = db.query(Anime).filter(Anime.id == anime_id).first()
@@ -31,6 +31,8 @@ async def sync_anime_updates(anime_id: int):
         anime.name = anime_name
     if poster_url:
         anime.poster_url = poster_url
+    if mal_url:
+        anime.mal_url = mal_url
     if description:
         anime.description = description
 

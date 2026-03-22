@@ -20,13 +20,9 @@
     <nav class="navbar" id="navbar">
         <div class="logo">AnimeFix</div>
         <div class="nav-links">
-            <a href="#" class="nav-item">Home</a>
-            <a href="#" class="nav-item">Séries</a>
-            <a href="#" class="nav-item">Filmes</a>
-            <a href="#" class="nav-item">Bombando</a>
-            <a href="/static/admin.html" class="nav-item" style="color:var(--netflix-red)">Admin</a>
-            <div class="nav-item"><i class="ph ph-magnifying-glass" style="font-size:1.4rem"></i></div>
-            <div class="nav-item"><i class="ph ph-bell" style="font-size:1.4rem"></i></div>
+            <a href="/" class="nav-item">Home</a>
+            <a href="/todos-animes" class="nav-item">Todos os Animes</a>
+            <a href="/admin" class="nav-item" style="color:var(--netflix-red)">Admin</a>
         </div>
     </nav>
 
@@ -37,8 +33,15 @@
             <p class="hero-synopsis" id="heroSynopsis" style="margin-bottom: 25px; line-height: 1.5; color: #ddd; max-width: 500px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></p>
             <div class="hero-btns">
                 <button class="btn btn-primary" onclick="playRandom()"><i class="ph ph-play-fill"></i> Assistir</button>
-                <button class="btn btn-secondary" onclick="showRandomInfo()"><i class="ph ph-info"></i> Mais Informações</button>
+                <a id="heroMalLink" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none;"><i class="ph ph-info"></i> Mais Informações</a>
             </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <h2 class="row-title">Novos Episódios 🔥</h2>
+        <div class="anime-grid" id="newEpisodesGrid">
+            <!-- New episodes cards -->
         </div>
     </div>
 

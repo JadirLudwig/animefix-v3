@@ -26,14 +26,12 @@ def get_session():
         timeout=15
     )
 
-async def get_jikan_image(anime_name: str) -> Optional[str]:
+async def get_jikan_info(anime_name: str) -> Tuple[Optional[str], Optional[str]]:
     """
-    Queries the Jikan API (MyAnimeList) to fetch a high-resolution poster for the anime.
-    This is free and does not require an API key.
+    Queries the Jikan API (MyAnimeList) to fetch a high-resolution poster and MAL URL.
+    Returns: (poster_url, mal_url)
     """
     try:
-        # Clean name for searching (remove year or special tags often in scraper names)
-        # e.g. "Solo Leveling (2024)" -> "Solo Leveling"
         clean_name = re.sub(r'\(\d+\)', '', anime_name).strip()
         
         async with httpx.AsyncClient(timeout=10) as client:
@@ -43,14 +41,16 @@ async def get_jikan_image(anime_name: str) -> Optional[str]:
                 data = resp.json()
                 if data.get('data') and len(data['data']) > 0:
                     anime_data = data['data'][0]
-                    # Try to get the large WebP image, fallback to large JPG
+                    mal_url = anime_data.get('url') # Link to MAL page
+                    
                     images = anime_data.get('images', {})
                     webp = images.get('webp', {})
                     jpg = images.get('jpg', {})
-                    return webp.get('large_image_url') or jpg.get('large_image_url')
+                    poster_url = webp.get('large_image_url') or jpg.get('large_image_url')
+                    return poster_url, mal_url
     except Exception as e:
-        logger.warning(f"Failed to fetch HD poster from Jikan for '{anime_name}': {e}")
-    return None
+        logger.warning(f"Failed to fetch info from Jikan for '{anime_name}': {e}")
+    return None, None
 
 async def scrape_anime_episodes(anime_url: str):
     """
@@ -77,8 +77,8 @@ async def scrape_anime_episodes(anime_url: str):
             if h1:
                 anime_name = h1.text.strip()
             
-            # Use Jikan API for high-resolution posters (Override low-res site one)
-            hd_poster = await get_jikan_image(anime_name)
+            # Use Jikan API for high-resolution posters and MAL links
+            hd_poster, mal_url = await get_jikan_info(anime_name)
             if hd_poster:
                 poster_url = hd_poster
                 logger.info(f"HD Poster found: {poster_url}")
@@ -139,7 +139,7 @@ async def scrape_anime_episodes(anime_url: str):
         except Exception as e:
             logger.error(f"Error in lightweight scrape_anime_episodes: {e}")
             
-    return anime_name, poster_url, description, episodes
+    return anime_name, poster_url, description, mal_url, episodes
 
 
 async def scrape_episode_video(episode_page_url: str):

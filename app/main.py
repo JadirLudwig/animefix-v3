@@ -56,6 +56,10 @@ async def service_worker_pwa():
 async def admin_page():
     return FileResponse("app/static/admin.html")
 
+@app.get("/todos-animes")
+async def all_animes_page():
+    return FileResponse("app/static/all-animes.html")
+
 @app.post("/api/animes", response_model=AnimeResponse)
 async def create_anime(anime: AnimeCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_anime = db.query(Anime).filter(Anime.base_url == anime.base_url).first()
@@ -73,6 +77,23 @@ async def create_anime(anime: AnimeCreate, background_tasks: BackgroundTasks, db
 async def read_animes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     animes = db.query(Anime).offset(skip).limit(limit).all()
     return animes
+
+@app.get("/api/episodes/recent")
+async def get_recent_episodes(db: Session = Depends(get_db)):
+    """ Returns the 12 most recently updated episodes that are Online. """
+    # We join with Anime to get the anime name for the card
+    eps = db.query(Episode).filter(Episode.status == "Online").order_by(Episode.id.desc()).limit(12).all()
+    
+    res = []
+    for ep in eps:
+        res.append({
+            "id": ep.id,
+            "number": ep.number,
+            "title": ep.title or f"Episódio {ep.number}",
+            "anime_name": ep.anime.name if ep.anime else "Unknown",
+            "thumb_url": ep.thumb_url or ep.anime.poster_url if ep.anime else None
+        })
+    return res
 
 @app.post("/api/animes/{anime_id}/sync")
 async def sync_anime_endpoint(anime_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
