@@ -196,3 +196,53 @@ function playEpisode(epId, animeName, epNumber, mediaType) {
         }
     }
 }
+
+// Funções de Backup e Restauração (Links Raiz)
+function exportLinks() {
+    if (globalAnimes.length === 0) {
+        showToast("Nenhum anime para exportar.", true);
+        return;
+    }
+    const links = globalAnimes.map(a => a.base_url).join('\n');
+    document.getElementById('importArea').value = links;
+    showToast("Links exportados com sucesso!");
+}
+
+async function bulkRestore() {
+    const text = document.getElementById('importArea').value.trim();
+    if (!text) {
+        showToast("Cole a lista de links na caixa de texto.", true);
+        return;
+    }
+    
+    const links = text.split('\n').map(l => l.trim()).filter(l => l.startsWith('http'));
+    if (links.length === 0) {
+        showToast("Nenhum link detectado.", true);
+        return;
+    }
+
+    if (!confirm(`Deseja restaurar ${links.length} animes?`)) return;
+
+    showToast(`Restaurando... (0/${links.length})`);
+    
+    let successCount = 0;
+    for (const link of links) {
+        try {
+            const res = await fetch('/api/animes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ base_url: link })
+            });
+            if (res.ok) {
+                successCount++;
+                showToast(`Restaurando... (${successCount}/${links.length})`);
+            }
+        } catch (err) {
+            console.error(`Erro ao restaurar: ${link}`, err);
+        }
+    }
+
+    showToast(`Finalizado! ${successCount} animes restaurados.`);
+    document.getElementById('importArea').value = '';
+    setTimeout(fetchAnimes, 1000);
+}
