@@ -41,25 +41,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function applyTVExclusiveLayout() {
+    window.isTVExclusiveMode = true;
+
+    // Remove Navbar entirely
+    const navbar = document.getElementById('navbar');
+    if (navbar) navbar.style.display = 'none';
+
     // Hide Hero Section
     const hero = document.getElementById('hero');
     if (hero) hero.style.display = 'none';
     
-    // Hide Navigation Links (but keep Logo)
-    const navLinks = document.querySelector('.navbar nav');
-    if (navLinks) navLinks.style.display = 'none';
-
     // Hide The "All Animes" row
     const animeGridRow = document.getElementById('animeGrid')?.closest('.row');
     if (animeGridRow) animeGridRow.style.display = 'none';
 
     // Ensure the New Episodes row acts as the top of the page
     const newEpsRow = document.getElementById('newEpisodesGrid')?.closest('.row');
-    if (newEpsRow) newEpsRow.style.marginTop = '100px';
-
-    // We keep the "Continue Watching" row hidden dynamically in renderContinueWatching 
-    // but just to be sure we can set a flag that disables it entirely.
-    window.isTVExclusiveMode = true;
+    if (newEpsRow) newEpsRow.style.marginTop = '20px'; // Less margin since there's no navbar
 }
 
 function handleKeyDown(e) {    const focusable = Array.from(document.querySelectorAll('[tabindex], button, video'));
@@ -163,6 +161,14 @@ function renderRecentEpisodes(eps) {
         };
         grid.appendChild(card);
     });
+
+    // Auto-focus the first element if in TV mode
+    if (window.isTVExclusiveMode) {
+        setTimeout(() => {
+            const firstCard = grid.querySelector('.anime-card');
+            if (firstCard) firstCard.focus();
+        }, 100);
+    }
 }
 
 function renderAnimesGrid(data, containerId) {
