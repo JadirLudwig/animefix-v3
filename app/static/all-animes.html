@@ -24,9 +24,9 @@
     <header style="display:flex; justify-content:space-between; align-items:center; padding: 20px 4%; position: fixed; top: 0; width: 100%; z-index: 1000; background: var(--bg-dark);" id="navbar">
         <div class="logo" onclick="window.location.href='/'" style="cursor:pointer">AnimeFix</div>
         <nav style="display:flex; gap: 20px;">
-            <a href="/" style="text-decoration:none; color:white; font-size: 0.9rem;">Home</a>
-            <a href="/todos-animes" style="text-decoration:none; color:var(--netflix-red); font-weight:bold; font-size: 0.9rem;">Todos os Animes</a>
-            <a href="/admin" style="text-decoration:none; color:white; font-size: 0.9rem;">Admin</a>
+            <a href="/" tabindex="0" style="text-decoration:none; color:white; font-size: 0.9rem;">Home</a>
+            <a href="/todos-animes" tabindex="0" style="text-decoration:none; color:var(--netflix-red); font-weight:bold; font-size: 0.9rem;">Todos os Animes</a>
+            <a href="/admin" tabindex="0" style="text-decoration:none; color:white; font-size: 0.9rem;">Admin</a>
         </nav>
     </header>
 
@@ -78,6 +78,7 @@
             animeData.forEach(anime => {
                 const card = document.createElement('div');
                 card.className = 'anime-card';
+                card.tabIndex = 0;
                 card.innerHTML = `
                     <img src="${anime.poster_url}" alt="${anime.name}">
                     <div class="anime-info">
@@ -102,6 +103,8 @@
             
             anime.episodes.forEach(ep => {
                 const item = document.createElement('div');
+                item.className = 'ep-item';
+                item.tabIndex = 0;
                 item.style.padding = '10px';
                 item.style.background = '#222';
                 item.style.marginBottom = '5px';
@@ -111,6 +114,10 @@
                 item.onclick = () => playEpisode(ep.id, anime.name, ep.number, ep.media_type);
                 seasonGroups.appendChild(item);
             });
+            
+            // Focus first ep item
+            const firstEp = seasonGroups.querySelector('.ep-item');
+            if (firstEp) firstEp.focus();
         }
 
         function playEpisode(epId, animeName, epNumber, mediaType) {
@@ -153,6 +160,37 @@
                 }
             }
         }
+
+        // TV Spatial Navigation Support
+        document.addEventListener('keydown', function(e) {
+            let current = document.activeElement;
+            if (e.key === 'Enter') {
+                if (current.onclick) current.onclick();
+                else if (current.tagName === 'BUTTON' || current.tagName === 'A') current.click();
+            } else if (e.key === 'Escape' || e.key === 'Back' || e.key === 'Backspace') {
+                if (document.getElementById('playerPanel').style.display === 'block') {
+                    document.getElementById('playerPanel').style.display='none';
+                    const video = document.getElementById('videoPlayer');
+                    video.pause();
+                    if (currentHls) { currentHls.destroy(); currentHls = null; }
+                    e.preventDefault();
+                } else if (document.getElementById('detailsModal').style.display === 'flex') {
+                    document.getElementById('detailsModal').style.display='none';
+                    e.preventDefault();
+                }
+            }
+        });
+
+        document.addEventListener('focus', function(e) {
+            if (e.target && e.target.scrollIntoView) {
+                if (e.target.classList.contains('anime-card') || 
+                    e.target.classList.contains('ep-item') ||
+                    e.target.tagName === 'BUTTON' ||
+                    e.target.tagName === 'A') {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                }
+            }
+        }, true);
     </script>
 </body>
 </html>

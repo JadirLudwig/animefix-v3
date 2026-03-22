@@ -44,21 +44,33 @@ function handleKeyDown(e) {
         return;
     }
 
+    // Modal close handling
     if (e.key === 'Escape' || e.key === 'Back' || e.key === 'Backspace') {
         if (document.getElementById('playerPanel').style.display === 'block') {
             closePlayer();
+            e.preventDefault();
         } else if (document.getElementById('detailsModal').style.display === 'flex') {
             closeModal();
+            e.preventDefault();
         }
         return;
     }
-
-    // Basic spatial navigation (very simple version)
-    // In a real TV app, we'd use a grid-based spatial lib, 
-    // but here we can just do basic tab navigation for simplicity or more complex logic.
-    // For standard TV behavior, we usually just let the browser handle focus with Arrow keys 
-    // if we add the right CSS and tabindexes.
 }
+
+// TV Spatial Navigation - Auto Scroll to focused element
+document.addEventListener('focus', function(e) {
+    if (e.target && e.target.scrollIntoView) {
+        // Only scroll if it's a card, episode, or button
+        if (e.target.classList.contains('anime-card') || 
+            e.target.classList.contains('ep-item') ||
+            e.target.tagName === 'BUTTON' ||
+            e.target.tagName === 'A') {
+            
+            // Use block: center to keep it in the middle of the TV screen
+            e.target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }
+    }
+}, true);
 
 async function fetchAnimes() {
     try {
