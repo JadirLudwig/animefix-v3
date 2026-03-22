@@ -30,45 +30,7 @@ async def lifespan(app: FastAPI):
     start_background_jobs(scheduler)
     scheduler.start()
     
-    # Setup Ngrok
-    try:
-        import os
-        import subprocess
-        import shutil
-        ngrok_token = os.getenv("NGROK_AUTHTOKEN")
-        ngrok_bin = shutil.which("ngrok")
-
-        # Fallback to system binary (Works on Termux)
-        if ngrok_bin and (not os.name == 'nt' and not os.uname().sysname == 'Darwin'):
-            # On non-Windows/Mac (like Android/Linux), we prefer subprocess if library might be unstable
-            logger.info(f"Using system ngrok at {ngrok_bin}...")
-            if ngrok_token:
-                subprocess.run([ngrok_bin, "config", "add-authtoken", ngrok_token], capture_output=True)
-            
-            subprocess.Popen([ngrok_bin, "http", "8000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            logger.info("*** NGROK STARTED VIA SUBPROCESS ***")
-            logger.info("Access the Ngrok dashboard at http://localhost:4040 to see your public URL")
-        else:
-            try:
-                from pyngrok import ngrok
-                # Try official library first (Works on PC)
-                if ngrok_token:
-                    ngrok.set_auth_token(ngrok_token)
-                ngrok_tunnel = ngrok.connect(8000)
-                logger.info(f"*** NGROK TUNNEL ACTIVE: {ngrok_tunnel.public_url} ***")
-            except Exception as lib_e:
-                logger.warning(f"Ngrok library failed: {lib_e}. Trying subprocess fallback...")
-                if ngrok_bin:
-                    if ngrok_token:
-                        subprocess.run([ngrok_bin, "config", "add-authtoken", ngrok_token], capture_output=True)
-                    subprocess.Popen([ngrok_bin, "http", "8000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    logger.info("*** NGROK STARTED VIA SUBPROCESS FALLBACK ***")
-                else:
-                    logger.warning("No ngrok binary found for fallback.")
-
-    except Exception as e:
-        logger.warning(f"Ngrok setup error: {e}")
-        
+    # Lifespan: Start scheduler
     yield
     
     logger.info("Shutting down APScheduler...")
@@ -224,59 +186,3 @@ async def get_stream(episode_id: int, request: Request, db: Session = Depends(ge
         headers={"Accept-Ranges": "bytes"}
     )
 
-@app.get("/debug-scraper")
-async def debug_scraper():
-    import sys
-    from playwright.async_api import async_playwright
-    import io
-    
-    url = "https://animesonlinecc.to/episodio/darwin-jihen-episodio-1/"
-    logs = [f"--- Diagnosing {url} ---"]
-    
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, args=[
-            '--disable-blink-features=AutomationControlled',
-            '--no-sandbox',
-            '--disable-setuid-sandbox'
-        ])
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            java_script_enabled=True
-        )
-        page = await context.new_page()
-
-        async def handle_response(response):
-            try:
-                ct = response.headers.get("content-type", "").lower()
-                url_str = response.url.lower()
-                if "video" in ct or "mpegurl" in ct or ".m3u" in url_str or ".mp4" in url_str:
-                    logs.append(f"[MEDIA FOUND] CT: {ct} | URL: {response.url}")
-            except:
-                pass
-
-        page.on('response', handle_response)
-        
-        try:
-            await page.goto(url, wait_until='domcontentloaded', timeout=20000)
-            await page.wait_for_timeout(3000)
-            
-            buttons = await page.query_selector_all("li.dooplay_player_option, .player-option, .player-options li")
-            logs.append(f"Found {len(buttons)} player buttons")
-            if buttons:
-                for idx, btn in enumerate(buttons[:2]):
-                    await btn.click(timeout=3000)
-                    logs.append(f"Clicked button {idx}")
-                    await page.wait_for_timeout(3000)
-                    await page.mouse.click(960, 500)
-                    await page.wait_for_timeout(2000)
-            else:
-                await page.mouse.click(960, 500)
-                await page.wait_for_timeout(2000)
-                    
-            await page.wait_for_timeout(5000)
-        except Exception as e:
-            logs.append(f"Error: {e}")
-        finally:
-            await browser.close()
-            
-    return {"logs": logs}
