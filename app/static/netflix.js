@@ -32,10 +32,37 @@ document.addEventListener('DOMContentLoaded', () => {
             saveProgress(video.dataset.epId, video.currentTime, video.duration);
         }
     });
+
+    // --- TV EXCLUSIVE MODE ---
+    // If the native Android TV app is loading this site, strip everything except the logo and new episodes.
+    if (navigator.userAgent.includes("AnimeFixTV")) {
+        applyTVExclusiveLayout();
+    }
 });
 
-function handleKeyDown(e) {
-    const focusable = Array.from(document.querySelectorAll('[tabindex], button, video'));
+function applyTVExclusiveLayout() {
+    // Hide Hero Section
+    const hero = document.getElementById('hero');
+    if (hero) hero.style.display = 'none';
+    
+    // Hide Navigation Links (but keep Logo)
+    const navLinks = document.querySelector('.navbar nav');
+    if (navLinks) navLinks.style.display = 'none';
+
+    // Hide The "All Animes" row
+    const animeGridRow = document.getElementById('animeGrid')?.closest('.row');
+    if (animeGridRow) animeGridRow.style.display = 'none';
+
+    // Ensure the New Episodes row acts as the top of the page
+    const newEpsRow = document.getElementById('newEpisodesGrid')?.closest('.row');
+    if (newEpsRow) newEpsRow.style.marginTop = '100px';
+
+    // We keep the "Continue Watching" row hidden dynamically in renderContinueWatching 
+    // but just to be sure we can set a flag that disables it entirely.
+    window.isTVExclusiveMode = true;
+}
+
+function handleKeyDown(e) {    const focusable = Array.from(document.querySelectorAll('[tabindex], button, video'));
     let current = document.activeElement;
     
     if (e.key === 'Enter') {
@@ -158,6 +185,10 @@ function renderAnimesGrid(data, containerId) {
 }
 
 function renderContinueWatching() {
+    if (window.isTVExclusiveMode) {
+        document.getElementById('continueWatchingRow').style.display = 'none';
+        return;
+    }
     const progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}');
     const row = document.getElementById('continueWatchingRow');
     const grid = document.getElementById('continueGrid');
