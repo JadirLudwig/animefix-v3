@@ -26,6 +26,32 @@ def get_session():
         timeout=15
     )
 
+async def get_jikan_image(anime_name: str) -> Optional[str]:
+    """
+    Queries the Jikan API (MyAnimeList) to fetch a high-resolution poster for the anime.
+    This is free and does not require an API key.
+    """
+    try:
+        # Clean name for searching (remove year or special tags often in scraper names)
+        # e.g. "Solo Leveling (2024)" -> "Solo Leveling"
+        clean_name = re.sub(r'\(\d+\)', '', anime_name).strip()
+        
+        async with httpx.AsyncClient(timeout=10) as client:
+            url = f"https://api.jikan.moe/v4/anime?q={clean_name}&limit=1"
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('data') and len(data['data']) > 0:
+                    anime_data = data['data'][0]
+                    # Try to get the large WebP image, fallback to large JPG
+                    images = anime_data.get('images', {})
+                    webp = images.get('webp', {})
+                    jpg = images.get('jpg', {})
+                    return webp.get('large_image_url') or jpg.get('large_image_url')
+    except Exception as e:
+        logger.warning(f"Failed to fetch HD poster from Jikan for '{anime_name}': {e}")
+    return None
+
 async def scrape_anime_episodes(anime_url: str):
     """
     Scrapes the anime main page to extract the Anime Name and a list of Episodes grouped by season.
@@ -51,10 +77,16 @@ async def scrape_anime_episodes(anime_url: str):
             if h1:
                 anime_name = h1.text.strip()
             
-            # Extract Poster
-            poster_div = soup.select_one('div.poster img')
-            if poster_div and poster_div.get('src'):
-                poster_url = poster_div['src']
+            # Use Jikan API for high-resolution posters (Override low-res site one)
+            hd_poster = await get_jikan_image(anime_name)
+            if hd_poster:
+                poster_url = hd_poster
+                logger.info(f"HD Poster found: {poster_url}")
+            else:
+                # Fallback to current site poster
+                poster_div = soup.select_one('div.poster img')
+                if poster_div and poster_div.get('src'):
+                    poster_url = poster_div['src']
                 
             # Extract Description
             desc_container = soup.select_one('div.wp-content, div.resume, #info div.wp-content')
