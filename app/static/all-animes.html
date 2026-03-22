@@ -21,14 +21,14 @@
     </style>
 </head>
 <body>
-    <nav class="navbar scrolled">
-        <div class="logo" onclick="window.location.href='/'">AnimeFix</div>
-        <div class="nav-links">
-            <a href="/" class="nav-item">Home</a>
-            <a href="/todos-animes" class="nav-item active" style="font-weight: bold;">Todos os Animes</a>
-            <a href="/admin" class="nav-item" style="color:var(--netflix-red)">Admin</a>
-        </div>
-    </nav>
+    <header style="display:flex; justify-content:space-between; align-items:center; padding: 20px 4%; position: fixed; top: 0; width: 100%; z-index: 1000; background: var(--bg-dark);" id="navbar">
+        <div class="logo" onclick="window.location.href='/'" style="cursor:pointer">AnimeFix</div>
+        <nav style="display:flex; gap: 20px;">
+            <a href="/" style="text-decoration:none; color:white; font-size: 0.9rem;">Home</a>
+            <a href="/todos-animes" style="text-decoration:none; color:var(--netflix-red); font-weight:bold; font-size: 0.9rem;">Todos os Animes</a>
+            <a href="/admin" style="text-decoration:none; color:white; font-size: 0.9rem;">Admin</a>
+        </nav>
+    </header>
 
     <div class="all-grid" id="allAnimeGrid">
         <!-- Grid Items -->

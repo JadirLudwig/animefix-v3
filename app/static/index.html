@@ -17,14 +17,14 @@
             navigator.serviceWorker.register('/service-worker.js');
         }
     </script>
-    <nav class="navbar" id="navbar">
-        <div class="logo" onclick="window.location.href='/'">AnimeFix</div>
-        <div class="nav-links">
-            <a href="/" class="nav-item">Home</a>
-            <a href="/todos-animes" class="nav-item">Todos os Animes</a>
-            <a href="/admin" class="nav-item" style="color:var(--netflix-red)">Admin</a>
-        </div>
-    </nav>
+    <header style="display:flex; justify-content:space-between; align-items:center; padding: 20px 4%; position: fixed; top: 0; width: 100%; z-index: 1000; background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%); transition: background 0.3s;" id="navbar">
+        <div class="logo" onclick="window.location.href='/'" style="cursor:pointer">AnimeFix</div>
+        <nav style="display:flex; gap: 20px;">
+            <a href="/" style="text-decoration:none; color:white; font-size: 0.9rem;">Home</a>
+            <a href="/todos-animes" style="text-decoration:none; color:white; font-size: 0.9rem;">Todos os Animes</a>
+            <a href="/admin" style="text-decoration:none; color:var(--netflix-red); font-weight:bold; font-size: 0.9rem;">Admin</a>
+        </nav>
+    </header>
 
     <div class="hero" id="hero" style="background-image: url('https://images.alphacoders.com/132/1322308.jpeg')">
         <div class="hero-overlay"></div>
