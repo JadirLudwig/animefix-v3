@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('refreshListBtn').addEventListener('click', fetchAnimes);
+    
+    document.getElementById('exportBtn').addEventListener('click', exportLinks);
+    document.getElementById('importBtn').addEventListener('click', bulkRestore);
 });
 
 let globalAnimes = [];
