@@ -84,8 +84,10 @@ function renderHome() {
 
 async function fetchRecentEpisodes() {
     try {
+        console.log("Fetching recent episodes...");
         const res = await fetch('/api/episodes/recent');
         const eps = await res.json();
+        console.log("Recent episodes found:", eps.length);
         renderRecentEpisodes(eps);
     } catch (err) {
         console.error("Error fetching recent episodes:", err);
@@ -94,6 +96,14 @@ async function fetchRecentEpisodes() {
 
 function renderRecentEpisodes(eps) {
     const grid = document.getElementById('newEpisodesGrid');
+    const row = grid.closest('.row');
+    
+    if (eps.length === 0) {
+        row.style.display = 'none'; // Hide if empty to not frustrate user
+        return;
+    }
+    
+    row.style.display = 'block';
     grid.innerHTML = '';
     eps.forEach(ep => {
         const card = document.createElement('div');
@@ -107,7 +117,11 @@ function renderRecentEpisodes(eps) {
             </div>
         `;
         // Find media type from animeData if possible, or assume m3u8 for recent
-        card.onclick = () => playEpisode(ep.id, ep.anime_name, ep.number, '.m3u8');
+        // Direct play: clicking card opens player
+        card.onclick = () => {
+             console.log("Playing recent episode:", ep.id);
+             playEpisode(ep.id, ep.anime_name, ep.number, 'video/mp4');
+        };
         grid.appendChild(card);
     });
 }
@@ -185,13 +199,15 @@ function setupHero() {
     document.getElementById('heroSynopsis').textContent = hero.description || "Nenhuma descrição disponível.";
     
     // Setup MAL link
+    // Setup MAL link (Always show, use search as fallback)
     const malBtn = document.getElementById('heroMalLink');
     if (hero.mal_url) {
         malBtn.href = hero.mal_url;
-        malBtn.style.display = 'flex';
     } else {
-        malBtn.style.display = 'none';
+        // Fallback to MyAnimeList search
+        malBtn.href = `https://myanimelist.net/anime.php?q=${encodeURIComponent(hero.name)}`;
     }
+    malBtn.style.display = 'flex';
     
     currentIndex = animeData.indexOf(hero);
 }
