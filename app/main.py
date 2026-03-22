@@ -91,7 +91,8 @@ async def get_recent_episodes(db: Session = Depends(get_db)):
             "number": ep.number,
             "title": ep.title or f"Episódio {ep.number}",
             "anime_name": ep.anime.name if ep.anime else "Unknown",
-            "thumb_url": ep.thumb_url or ep.anime.poster_url if ep.anime else None
+            "thumb_url": ep.thumb_url or ep.anime.poster_url if ep.anime else None,
+            "media_type": ep.media_type
         })
     return res
 

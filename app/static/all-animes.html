@@ -116,18 +116,41 @@
         function playEpisode(epId, animeName, epNumber, mediaType) {
             const panel = document.getElementById('playerPanel');
             panel.style.display = 'block';
-            const video = document.getElementById('videoPlayer');
-            const streamUrl = `/stream/${epId}`;
-            if (currentHls) currentHls.destroy();
             
-            if (Hls.isSupported()) {
-                currentHls = new Hls();
-                currentHls.loadSource(streamUrl);
-                currentHls.attachMedia(video);
-                currentHls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            const video = document.getElementById('videoPlayer');
+            const container = document.getElementById('videoContainer');
+            const streamUrl = `/stream/${epId}`;
+            
+            if (currentHls) {
+                currentHls.destroy();
+                currentHls = null;
+            }
+
+            // Cleanup any existing iframe
+            const existingIframe = container.querySelector('iframe');
+            if (existingIframe) existingIframe.remove();
+
+            if (mediaType === 'youtube') {
+                video.style.display = 'none';
+                const iframe = document.createElement('iframe');
+                iframe.src = streamUrl;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                iframe.allowFullscreen = true;
+                container.appendChild(iframe);
             } else {
-                video.src = streamUrl;
-                video.play();
+                video.style.display = 'block';
+                if (Hls.isSupported()) {
+                    currentHls = new Hls();
+                    currentHls.loadSource(streamUrl);
+                    currentHls.attachMedia(video);
+                    currentHls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+                } else {
+                    video.src = streamUrl;
+                    video.play();
+                }
             }
         }
     </script>

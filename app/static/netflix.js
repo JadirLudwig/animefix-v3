@@ -119,8 +119,8 @@ function renderRecentEpisodes(eps) {
         // Find media type from animeData if possible, or assume m3u8 for recent
         // Direct play: clicking card opens player
         card.onclick = () => {
-             console.log("Playing recent episode:", ep.id);
-             playEpisode(ep.id, ep.anime_name, ep.number, 'video/mp4');
+             console.log("Playing recent episode:", ep.id, ep.media_type);
+             playEpisode(ep.id, ep.anime_name, ep.number, ep.media_type);
         };
         grid.appendChild(card);
     });
