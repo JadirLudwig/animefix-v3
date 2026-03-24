@@ -80,9 +80,9 @@ async def read_animes(skip: int = 0, limit: int = 100, db: Session = Depends(get
 
 @app.get("/api/episodes/recent")
 async def get_recent_episodes(db: Session = Depends(get_db)):
-    """ Returns the 12 most recently updated episodes that are Online. """
+    """ Returns the 36 most recently updated episodes that are Online. """
     # We join with Anime to get the anime name for the card
-    eps = db.query(Episode).filter(Episode.status == "Online").order_by(Episode.id.desc()).limit(12).all()
+    eps = db.query(Episode).filter(Episode.status == "Online").order_by(Episode.id.desc()).limit(36).all()
     
     res = []
     for ep in eps:
