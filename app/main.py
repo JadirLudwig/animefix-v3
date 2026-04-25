@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from contextlib import asynccontextmanager
 import logging
@@ -64,7 +64,19 @@ async def all_animes_page():
 async def create_anime(anime: AnimeCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_anime = db.query(Anime).filter(Anime.base_url == anime.base_url).first()
     if not db_anime:
-        db_anime = Anime(name="Pending Anime...", base_url=anime.base_url)
+        # Auto-detect source type if not provided
+        source_type = anime.source_type
+        if not source_type:
+            if 'meusanimes.blog' in anime.base_url:
+                source_type = 'meusanimes'
+            else:
+                source_type = 'dooplay'
+        
+        db_anime = Anime(
+            name="Pending Anime...", 
+            base_url=anime.base_url,
+            source_type=source_type
+        )
         db.add(db_anime)
         db.commit()
         db.refresh(db_anime)
@@ -72,6 +84,34 @@ async def create_anime(anime: AnimeCreate, background_tasks: BackgroundTasks, db
     # Trigger episode extraction in background
     background_tasks.add_task(sync_anime_updates, db_anime.id)
     return db_anime
+
+@app.post("/api/animes/meusanimes")
+async def create_meusanimes_anime(anime_url: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """
+    Endpoint dedicado para adicionar animes do meusanimes.blog
+    """
+    # Validate URL format
+    if not anime_url.startswith('https://meusanimes.blog/a/'):
+        raise HTTPException(status_code=400, detail="URL inválida. Deve ser uma URL de anime do meusanimes.blog")
+    
+    # Check if anime already exists
+    db_anime = db.query(Anime).filter(Anime.base_url == anime_url).first()
+    if db_anime:
+        raise HTTPException(status_code=409, detail="Anime já existe no banco de dados")
+    
+    # Create new anime
+    db_anime = Anime(
+        name="Pending Anime...", 
+        base_url=anime_url,
+        source_type="meusanimes"
+    )
+    db.add(db_anime)
+    db.commit()
+    db.refresh(db_anime)
+    
+    # Trigger episode extraction in background
+    background_tasks.add_task(sync_anime_updates, db_anime.id)
+    return {"message": "Anime adicionado com sucesso", "anime_id": db_anime.id}
 
 @app.get("/api/animes", response_model=List[AnimeResponse])
 async def read_animes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -144,8 +184,8 @@ async def get_stream(episode_id: int, request: Request, db: Session = Depends(ge
     if not ep.stream_url:
         raise HTTPException(status_code=404, detail="Could not capture stream link from site.")
         
-    # Only proxy direct video links (mp4/m3u8), not YouTube iframes
-    if ep.media_type == 'youtube':
+    # Only proxy direct video links (mp4/m3u8), not iframes
+    if ep.media_type in ['youtube', 'iframe']:
         return RedirectResponse(url=ep.stream_url)
 
     # STREAM PROXY: Masquerade as a browser to avoid Referer/UA blocks

@@ -4,6 +4,7 @@ from datetime import datetime
 
 class AnimeCreate(BaseModel):
     base_url: str
+    source_type: Optional[str] = "dooplay"
 
 class EpisodeResponse(BaseModel):
     id: int
@@ -26,6 +27,7 @@ class AnimeResponse(BaseModel):
     id: int
     name: str
     base_url: str
+    source_type: str
     poster_url: Optional[str]
     mal_url: Optional[str]
     description: Optional[str]

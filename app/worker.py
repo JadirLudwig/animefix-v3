@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from .database import SessionLocal
 from .models import Anime, Episode
 from .scraper import scrape_anime_episodes, scrape_episode_video
+from .scraper_meusanimes import scrape_meusanimes_episodes, scrape_meusanimes_episode_video
 from .validator import is_link_alive
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,13 @@ async def sync_anime_updates(anime_id: int):
     db.close()
 
     logger.info(f"Syncing anime updates for {base_url}...")
-    anime_name, poster_url, description, mal_url, scraped_episodes = await scrape_anime_episodes(base_url)
+    
+    # Determine which scraper to use based on the URL
+    if 'meusanimes.blog' in base_url:
+        anime_name, poster_url, description, scraped_episodes = await scrape_meusanimes_episodes(base_url)
+        mal_url = None  # meusanimes.blog doesn't provide MAL URL directly
+    else:
+        anime_name, poster_url, description, mal_url, scraped_episodes = await scrape_anime_episodes(base_url)
 
     db = SessionLocal()
     anime = db.query(Anime).filter(Anime.id == anime_id).first()
@@ -77,7 +84,7 @@ async def resolve_missing_streams():
         while True:
             db = SessionLocal()
             pending_ep = db.query(Episode).filter(
-                Episode.status.in_(["Pending", "Renovating", "Expired", "Failed"])
+                Episode.status.in_(["Pending", "Renovating", "Expired"])
             ).first()
 
             if not pending_ep:
@@ -89,10 +96,15 @@ async def resolve_missing_streams():
             db.commit()
             ep_id = pending_ep.id
             page_url = pending_ep.page_url
+            anime_base_url = pending_ep.anime.base_url
             db.close()
 
             logger.info(f"Resolving stream for episode ID {ep_id} ({page_url})")
-            stream_url, media_type, thumb_url, ep_description = await scrape_episode_video(page_url)
+            
+            if 'meusanimes.blog' in anime_base_url:
+                stream_url, media_type, thumb_url, ep_description = await scrape_meusanimes_episode_video(page_url)
+            else:
+                stream_url, media_type, thumb_url, ep_description = await scrape_episode_video(page_url)
 
             db = SessionLocal()
             ep = db.query(Episode).filter(Episode.id == ep_id).first()
@@ -102,9 +114,16 @@ async def resolve_missing_streams():
                 ep.status = "Online"
                 ep.thumb_url = thumb_url
                 ep.description = ep_description
+                ep.retry_count = 0
                 logger.info(f"Episode {ep_id} resolved successfully.")
             else:
-                ep.status = "Failed"
+                ep.retry_count = (ep.retry_count or 0) + 1
+                if ep.retry_count >= 3:
+                    ep.status = "Failed"
+                    logger.warning(f"Episode {ep_id} failed after {ep.retry_count} attempts.")
+                else:
+                    ep.status = "Pending"
+                    logger.info(f"Episode {ep_id} extraction failed. Retry {ep.retry_count}/3.")
 
             ep.last_checked = datetime.utcnow()
             db.commit()
@@ -129,7 +148,14 @@ async def auto_refresh_episode(episode_id: int):
     ep_id = ep.id
     db.close()
     
-    stream_url, media_type, thumb_url, ep_description = await scrape_episode_video(page_url)
+    # Determine which scraper to use based on the anime's base URL
+    db = SessionLocal()
+    anime = db.query(Anime).filter(Anime.id == ep.anime_id).first()
+    if anime and 'meusanimes.blog' in anime.base_url:
+        stream_url, media_type, thumb_url, ep_description = await scrape_meusanimes_episode_video(page_url)
+    else:
+        stream_url, media_type, thumb_url, ep_description = await scrape_episode_video(page_url)
+    db.close()
     
     db = SessionLocal()
     ep = db.query(Episode).filter(Episode.id == ep_id).first()

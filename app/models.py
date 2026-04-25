@@ -8,8 +8,10 @@ class Anime(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
-    # The URL of the anime page on animesonlinecc.to
+    # The URL of the anime page
     base_url = Column(String, unique=True, index=True, nullable=False)
+    # Source type: 'dooplay' for animesonlinecc.to, 'meusanimes' for meusanimes.blog
+    source_type = Column(String, default="dooplay", nullable=False)
     last_sync_date = Column(DateTime, default=datetime.utcnow)
     poster_url = Column(String, nullable=True)
     mal_url = Column(String, nullable=True) # MyAnimeList URL
@@ -35,8 +37,9 @@ class Episode(Base):
     stream_url = Column(String, nullable=True)
     # mp4 or m3u8
     media_type = Column(String, nullable=True)
-    # Online, Expired, Renovating, Pending
+    # Online, Expired, Renovating, Pending, Failed
     status = Column(String, default="Pending")
     last_checked = Column(DateTime, default=datetime.utcnow)
+    retry_count = Column(Integer, default=0)
 
     anime = relationship("Anime", back_populates="episodes")

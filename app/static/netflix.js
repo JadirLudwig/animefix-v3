@@ -335,13 +335,14 @@ function playEpisode(epId, animeName, epNumber, mediaType, resumeTime = 0) {
     const streamUrl = `/stream/${epId}`;
     if (currentHls) currentHls.destroy();
 
-    if (mediaType === 'youtube') {
+    if (mediaType === 'youtube' || mediaType === 'iframe') {
         const container = document.getElementById('videoContainer');
         const existingIframe = container.querySelector('iframe');
         if (existingIframe) existingIframe.remove();
         video.style.display = 'none';
         const iframe = document.createElement('iframe');
         iframe.src = streamUrl;
+        iframe.referrerPolicy = "no-referrer";
         iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
         iframe.allowFullscreen = true;
         container.appendChild(iframe);

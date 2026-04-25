@@ -170,13 +170,14 @@ function playEpisode(epId, animeName, epNumber, mediaType) {
 
     const video = document.getElementById('internalPlayer');
 
-    if (mediaType === 'youtube') {
-        // For YouTube embeds, use an iframe directly
+    if (mediaType === 'youtube' || mediaType === 'iframe') {
+        // For YouTube/Third-party embeds, use an iframe directly
         video.style.display = 'none';
         const iframe = document.createElement('iframe');
         iframe.className = 'yt-player';
         iframe.style.cssText = 'width:100%;height:100%;min-height:400px;border:0;border-radius:12px;';
         iframe.src = `/stream/${epId}`;
+        iframe.referrerPolicy = "no-referrer";
         iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
         iframe.allowFullscreen = true;
         container.appendChild(iframe);

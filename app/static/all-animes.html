@@ -137,10 +137,11 @@
             const existingIframe = container.querySelector('iframe');
             if (existingIframe) existingIframe.remove();
 
-            if (mediaType === 'youtube') {
+            if (mediaType === 'youtube' || mediaType === 'iframe') {
                 video.style.display = 'none';
                 const iframe = document.createElement('iframe');
                 iframe.src = streamUrl;
+                iframe.referrerPolicy = "no-referrer";
                 iframe.style.width = '100%';
                 iframe.style.height = '100%';
                 iframe.style.border = 'none';
