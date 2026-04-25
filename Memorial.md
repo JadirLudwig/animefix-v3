@@ -15,3 +15,4 @@
 
 ## Cancelamento de Funcionalidades
 - **Configuração de Rede (Cloudflare/Duck DNS):** A tentativa de configurar um endereço fixo via Cloudflare Tunnel e Duck DNS foi descontinuada e todos os arquivos relacionados (`update_duckdns.sh` e `cloudflared`) foram removidos do projeto a pedido do usuário.
+- **Migração para v3 (Concluída):** O projeto foi migrado para um novo repositório GitHub (`animefix-v3`), consolidando todas as melhorias de scraping e removendo dependências externas desnecessárias.
